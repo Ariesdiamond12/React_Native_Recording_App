@@ -1,4 +1,11 @@
-import { View, Alert, FlatList, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  TextInput,
+  Alert,
+  FlatList,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { Link } from "expo-router";
 import { Audio } from "expo-av";
 import { useEffect, useState } from "react";
@@ -8,7 +15,8 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 export default function App() {
   const [recording, setRecording] = useState(null);
   const [audioSource, setAudioSource] = useState(null);
-  const [recordingsList, setRecordingsList] = useState([]); 
+  const [recordingsList, setRecordingsList] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -69,6 +77,14 @@ export default function App() {
   return (
     <View className="flex-1 items-center justify-start bg-gray-100 p-5">
       <View className="flex-row justify-center items-center space-x-4 mt-10">
+        {/* Search Bar */}
+        <TextInput
+          placeholder="Search"
+          className="flex-1 text-gray-600 px-5 py-3 border-gray-200 rounded-full"
+          clearButtonMode="always"
+          value={searchQuery}
+          onChange={(query) => handleSearch(query)}
+        />
         {/* Start/Stop Recording Button */}
         <TouchableOpacity
           onPress={recording ? stopRecording : startRecording}
