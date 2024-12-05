@@ -1,4 +1,4 @@
-import { View, Button, Alert } from "react-native";
+import { View, Alert, FlatList, Text, TouchableOpacity } from "react-native";
 import { Link } from "expo-router";
 import { Audio } from "expo-av";
 import { useEffect, useState } from "react";
@@ -8,7 +8,7 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 export default function App() {
   const [recording, setRecording] = useState(null);
   const [audioSource, setAudioSource] = useState(null);
-  const [player, setPlayer] = useState(null);
+  const [recordingsList, setRecordingsList] = useState([]); 
 
   useEffect(() => {
     (async () => {
@@ -40,6 +40,10 @@ export default function App() {
         const uri = recording.getURI();
         setAudioSource(uri);
         setRecording(null);
+        setRecordingsList((prevList) => [
+          ...prevList,
+          { id: Date.now().toString(), uri },
+        ]); // Add new recording to list
         Alert.alert("Recording stopped", `Saved at: ${uri}`);
       }
     } catch (error) {
@@ -47,48 +51,74 @@ export default function App() {
     }
   };
 
-  const playAudio = async () => {
+  const playAudio = async (uri) => {
     try {
-      if (audioSource) {
-        const sound = new Audio.Sound();
-        await sound.loadAsync({ uri: audioSource });
-        await sound.playAsync();
-        setPlayer(sound);
-      } else {
-        Alert.alert("No audio to play");
-      }
+      const sound = new Audio.Sound();
+      await sound.loadAsync({ uri });
+      await sound.playAsync();
     } catch (error) {
       console.error("Failed to play audio", error);
     }
   };
 
+  const deleteRecording = (id) => {
+    setRecordingsList((prevList) => prevList.filter((item) => item.id !== id));
+    Alert.alert("Recording deleted");
+  };
+
   return (
-    <View className="flex-1 items-center justify-center bg-white">
+    <View className="flex-1 items-center justify-start bg-gray-100 p-5">
+      <View className="flex-row justify-center items-center space-x-4 mt-10">
+        {/* Start/Stop Recording Button */}
+        <TouchableOpacity
+          onPress={recording ? stopRecording : startRecording}
+          className="bg-blue-500 p-6 rounded-full"
+        >
+          <FontAwesome6
+            name={recording ? "stop-circle" : "microphone"}
+            size={40}
+            color="white"
+          />
+        </TouchableOpacity>
 
+        {/* Play Last Recording Button */}
+        <TouchableOpacity
+          onPress={() => audioSource && playAudio(audioSource)}
+          className="bg-green-500 p-6 rounded-full"
+        >
+          <AntDesign name="play" size={40} color="white" />
+        </TouchableOpacity>
+      </View>
 
-      <FontAwesome6
-        name="microphone"
-        size={30}
-        color="white"
-        style={{ padding: 35 }}
-        className="rounded-full bg-blue-500"
-        title={recording ? "Stop Recording" : "Start Recording"}
-        onPress={recording ? stopRecording : startRecording}
-      />
-
-      <AntDesign
-        name="play"
-        size={30}
-        color="white"
-        style={{ padding: 35 }}
-        className="rounded-full bg-blue-500"
-        title="Play Sound"
-        onPress={playAudio}
-      />
-
-      <Link className="text-blue-500" href="/profile">
+      {/* <Link className="mt-5 text-blue-500 text-lg" href="/profile">
         Go To Profile
-      </Link>
+      </Link> */}
+
+      {/* List of Recordings */}
+      <FlatList
+        data={recordingsList}
+        renderItem={({ item }) => (
+          <View className="bg-white p-4 rounded-lg shadow-md mt-5 flex-row justify-between items-center">
+            <Text className="text-lg font-semibold">{`Recording ${item.id}`}</Text>
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                onPress={() => playAudio(item.uri)}
+                className="bg-blue-500 p-2 rounded-full"
+              >
+                <AntDesign name="play" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => deleteRecording(item.id)}
+                className="bg-red-500 p-2 rounded-full"
+              >
+                <AntDesign name="delete" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+        keyExtractor={(item) => item.id}
+        style={{ marginTop: 20, width: "100%" }}
+      />
     </View>
   );
 }
